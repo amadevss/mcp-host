@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MCP Host
 
-## Getting Started
+App Next.js con servidor MCP, interfaz tipo Host y clientes MCP para conectar a múltiples servidores.
 
-First, run the development server:
+## Características
+
+- **MCP Server**: Servidor MCP en `/api/mcp` con tools `echo` y `roll_dice`
+- **Host UI**: Interfaz para gestionar clientes y probar tools
+- **Chat con Gemini**: Chat en `/chat` que usa Gemini + tools MCP, con [Streamdown](https://streamdown.ai/) para Markdown en streaming
+- **Múltiples clientes**: Añade varios servidores MCP (locales o remotos) y conéctate a ellos
+
+## Inicio rápido
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000). Verás el Host UI con un cliente "Servidor local" por defecto.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Haz clic en **Conectar** para listar los tools del servidor
+2. Introduce los parámetros y haz clic en **Ejecutar** para probar cada tool
+3. Ve a [/chat](http://localhost:3000/chat) para el chat con Gemini (requiere `GOOGLE_GENERATIVE_AI_API_KEY` en `.env.local`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Añadir más clientes
 
-## Learn More
+En "Nuevo cliente" introduce un nombre y la URL del servidor MCP (ej: `https://tu-app.vercel.app/api/mcp`) y pulsa **Añadir**.
 
-To learn more about Next.js, take a look at the following resources:
+## Probar desde terminal
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+node scripts/test-mcp-client.mjs
+# o con URL personalizada:
+node scripts/test-mcp-client.mjs https://tu-servidor.com/api/mcp
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura
 
-## Deploy on Vercel
+```
+app/
+├── api/
+│   ├── mcp/route.ts           # MCP Server (Streamable HTTP)
+│   └── clients/
+│       ├── connect/route.ts   # Listar tools de un servidor
+│       └── call-tool/route.ts # Invocar un tool
+├── page.tsx                   # Host UI
+lib/
+└── mcp-client.ts              # Cliente MCP (stateless)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Configurar en Cursor
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Añade en tu configuración MCP:
+
+```json
+{
+  "mcpServers": {
+    "mcp-host": {
+      "url": "http://localhost:3000/api/mcp"
+    }
+  }
+}
+```
+
+## Deploy en Vercel
+
+El proyecto está listo para Vercel. Considera habilitar [Fluid compute](https://vercel.com/docs/fluid-compute) y ajustar `maxDuration` en la ruta MCP si usas Pro/Enterprise.

@@ -9,9 +9,22 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/mcp": "^1.0.25",
+    "@ai-sdk/react": "^3.0.118",
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@streamdown/cjk": "^1.0.3",
+    "@streamdown/code": "^1.1.1",
+    "@streamdown/math": "^1.0.2",
+    "@streamdown/mermaid": "^1.0.2",
+    "ai": "^6.0.116",
+    "katex": "^0.16.39",
+    "mcp-handler": "^1.0.7",
     "next": "16.2.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "streamdown": "^2.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
