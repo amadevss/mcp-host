@@ -28,23 +28,122 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #18181b;
-    --card-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --border: #27272a;
-    --input: #27272a;
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(14, 165, 233, 0.18);
+  color: #0f172a;
+}
+
+.chat-prose-bot,
+.chat-prose-user {
+  overflow-wrap: anywhere;
+}
+
+.chat-prose-bot p,
+.chat-prose-user p {
+  margin: 0;
+}
+
+.chat-prose-bot p + p,
+.chat-prose-user p + p {
+  margin-top: 0.75rem;
+}
+
+.chat-prose-bot a {
+  color: #0369a1;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.chat-prose-user a {
+  color: #e0f2fe;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.chat-prose-bot code,
+.chat-prose-user code {
+  border-radius: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.875em;
+}
+
+.chat-prose-bot code {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.chat-prose-user code {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+
+.chat-prose-bot pre,
+.chat-prose-user pre {
+  overflow-x: auto;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin: 0.75rem 0 0;
+}
+
+.chat-prose-bot pre {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.chat-prose-user pre {
+  background: rgba(15, 23, 42, 0.35);
+  color: #f8fafc;
+}
+
+.chat-prose-bot ul,
+.chat-prose-bot ol,
+.chat-prose-user ul,
+.chat-prose-user ol {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.chat-prose-bot li + li,
+.chat-prose-user li + li {
+  margin-top: 0.35rem;
+}
+
+.chat-prose-bot h1,
+.chat-prose-bot h2,
+.chat-prose-bot h3,
+.chat-prose-user h1,
+.chat-prose-user h2,
+.chat-prose-user h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.chat-prose-bot blockquote,
+.chat-prose-user blockquote {
+  margin: 0.75rem 0 0;
+  border-left: 3px solid rgba(14, 165, 233, 0.3);
+  padding-left: 0.9rem;
+}
+
+.chat-prose-user blockquote {
+  border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+.chat-prose-bot hr,
+.chat-prose-user hr {
+  margin: 1rem 0;
+  border: none;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
 }
