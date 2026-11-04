@@ -1,51 +1,30 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-
-export const runtime = "edge";
-
-export async function POST(request: NextRequest) {
+import { NextResponse } from "next/server.js";
+import { z } from "zod";
+import { callMcpTool } from "@/lib/mcp-client";
+import {
+  errorResponse,
+  guardHost,
+  HttpError,
+  readJson,
+} from "@/lib/server-config";
+export const runtime = "nodejs";
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { url, toolName, args } = body as {
-      url?: string;
-      toolName?: string;
-      args?: Record<string, unknown>;
-    };
-
-    if (!url || typeof url !== "string") {
-      return NextResponse.json(
-        { error: "URL del servidor MCP es requerida" },
-        { status: 400 }
-      );
-    }
-
-    if (!toolName || typeof toolName !== "string") {
-      return NextResponse.json(
-        { error: "Nombre del tool es requerido" },
-        { status: 400 }
-      );
-    }
-
-    const { callMcpTool } = await import("@/lib/mcp-client");
-    const result = await callMcpTool(
-      url,
-      toolName,
-      typeof args === "object" && args !== null ? args : {}
-    );
-
-    if (result.error) {
-      return NextResponse.json(
-        { error: result.error, content: [] },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ content: result.content });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    guardHost(request);
+    const parsed = z
+      .object({
+        url: z.string().min(1).max(2048),
+        toolName: z.string().min(1).max(256),
+        args: z.record(z.string(), z.unknown()).default({}),
+      })
+      .safeParse(await readJson(request));
+    if (!parsed.success)
+      throw new HttpError("Envía url, toolName y args como objeto JSON.");
+    const { url, toolName, args } = parsed.data;
     return NextResponse.json(
-      { error: message, content: [] },
-      { status: 500 }
+      await callMcpTool(url, toolName, args, request.signal),
     );
+  } catch (error) {
+    return errorResponse(error);
   }
 }

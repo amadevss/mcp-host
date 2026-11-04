@@ -1,53 +1,54 @@
 #!/usr/bin/env node
-/**
- * Script para probar el servidor MCP local.
- * Uso: node scripts/test-mcp-client.mjs [url]
- * Por defecto usa http://localhost:3000/api/mcp
- */
-
+import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
-const baseUrl = process.argv[2] || "http://localhost:3000/api/mcp";
-
-async function main() {
-  const url = baseUrl.includes("/mcp") ? baseUrl : `${baseUrl}/api/mcp`;
-  const transport = new StreamableHTTPClientTransport(new URL(url));
-  const client = new Client(
-    { name: "test-client", version: "1.0.0" },
-    {}
+const url =
+  process.argv[2] ||
+  process.env.MCP_LOCAL_URL ||
+  "http://localhost:3000/api/mcp";
+const client = new Client({ name: "mcp-host-test", version: "1.0.0" });
+try {
+  const headers = process.env.MCP_BEARER_TOKEN
+    ? { Authorization: `Bearer ${process.env.MCP_BEARER_TOKEN}` }
+    : {};
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(url), {
+      requestInit: { headers },
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          redirect: "error",
+          signal: AbortSignal.timeout(10_000),
+        }),
+    }),
   );
-
-  console.log("Conectando a", url);
-  await client.connect(transport);
-
   const { tools } = await client.listTools();
-  console.log("\nTools disponibles:", tools?.length ?? 0);
-  tools?.forEach((t) => console.log("  -", t.name, ":", t.description ?? ""));
-
-  if (tools?.some((t) => t.name === "echo")) {
-    console.log("\nProbando tool 'echo'...");
+  console.log(
+    "Herramientas:",
+    tools.map((t) => t.name).join(", ") || "(ninguna)",
+  );
+  if (tools.some((t) => t.name === "echo")) {
     const result = await client.callTool({
       name: "echo",
       arguments: { message: "Hola MCP!" },
     });
-    console.log("Resultado:", result.content);
+    assert.notEqual(result.isError, true);
+    assert.ok(JSON.stringify(result.content).includes("Hola MCP!"));
+    console.log("echo: correcto");
   }
-
-  if (tools?.some((t) => t.name === "roll_dice")) {
-    console.log("\nProbando tool 'roll_dice'...");
+  if (tools.some((t) => t.name === "roll_dice")) {
     const result = await client.callTool({
       name: "roll_dice",
       arguments: { sides: 6 },
     });
-    console.log("Resultado:", result.content);
+    assert.notEqual(result.isError, true);
+    assert.match(JSON.stringify(result.content), /[1-6] \(d6\)/);
+    console.log("roll_dice: correcto");
   }
-
-  client.close();
-  console.log("\nListo.");
+} catch (error) {
+  console.error("Prueba MCP fallida:", error.message);
+  process.exitCode = 1;
+} finally {
+  await client.close();
 }
-
-main().catch((err) => {
-  console.error("Error:", err.message);
-  process.exit(1);
-});

@@ -1,56 +1,47 @@
-import { createMcpHandler } from "mcp-handler";
-import { z } from "zod";
+import { NextResponse } from "next/server.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { registerTools } from "@/lib/mcp-tools";
+import { secretMatches } from "@/lib/server-config";
 
-const handler = createMcpHandler(
-  (server) => {
-    server.registerTool(
-      "echo",
-      {
-        title: "Echo",
-        description: "Echo a message back",
-        inputSchema: {
-          message: z.string().min(1).max(500),
-        },
-      },
-      async ({ message }) => ({
-        content: [{ type: "text", text: `Echo: ${message}` }],
-      })
-    );
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
-    server.registerTool(
-      "roll_dice",
-      {
-        title: "Roll Dice",
-        description: "Roll an N-sided die",
-        inputSchema: {
-          sides: z.number().int().min(2).max(100),
-        },
-      },
-      async ({ sides }) => {
-        const value = 1 + Math.floor(Math.random() * sides);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🎲 You rolled a ${value} (d${sides})!`,
-            },
-          ],
-        };
-      }
+async function handler(request: Request) {
+  const token = process.env.MCP_BEARER_TOKEN;
+  if (
+    token &&
+    !secretMatches(request.headers.get("authorization"), `Bearer ${token}`)
+  ) {
+    return NextResponse.json(
+      { error: "Token MCP requerido." },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
     );
-  },
-  {
-    serverInfo: {
-      name: "mcp-host-server",
-      version: "1.0.0",
-    },
-  },
-  {
-    basePath: "/api",
-    maxDuration: 60,
-    verboseLogs: process.env.NODE_ENV === "development",
-    disableSse: true,
   }
-);
+  if (request.method !== "POST") {
+    return new NextResponse(null, { status: 405, headers: { Allow: "POST" } });
+  }
+
+  // Use the Web Standard transport directly. The Node HTTP adapter replaces global
+  // Request/Response constructors, which interferes with Next.js route handlers.
+  const server = new McpServer({ name: "mcp-host-server", version: "1.0.0" });
+  registerTools(server);
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+  try {
+    await server.connect(transport);
+    const response = await transport.handleRequest(request);
+    // Complete the JSON response before closing this stateless connection.
+    const body = response.body ? await response.arrayBuffer() : null;
+    return new NextResponse(body, {
+      status: response.status,
+      headers: response.headers,
+    });
+  } finally {
+    await server.close();
+  }
+}
 
 export { handler as GET, handler as POST, handler as DELETE };
